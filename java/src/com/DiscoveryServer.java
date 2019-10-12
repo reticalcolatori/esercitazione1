@@ -154,7 +154,7 @@ public class DiscoveryServer {
 		DataOutputStream doStream = null;
 		
 		while (true) {
-//			packet.setPort(dsPort);
+			packet.setPort(dsPort);
 			packet.setData(buf, 0, buf.length); //i dati verranno scritti qui
 
 			try {
@@ -193,9 +193,15 @@ public class DiscoveryServer {
 			} catch (IOException e) {
 				e.printStackTrace(); System.exit(WRITEINT_ERR);
 			}
-			
-			buf = boStream.toByteArray(); //converto lo stream in un byte di array
-			packet.setData(buf, 0, buf.length);
+
+			//Ma cosa mi combinate?!?!
+            //Sovrascrivete il pointer del buffer!
+
+//			buf = boStream.toByteArray(); //converto lo stream in un byte di array
+//			packet.setData(buf, 0, buf.length);
+
+            packet.setData(boStream.toByteArray());
+
 			try {
 				socket.send(packet); //invio risposta
 			} catch (IOException e) {
