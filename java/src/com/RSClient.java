@@ -73,8 +73,9 @@ public class RSClient {
      * Richede al discovery server il servizio collegato al file.
      *
      * @param filename nome del file in qui fare lo swap
+     * @return se non c'è errore ritorno null.
      */
-    public boolean requestService(String filename) throws IOException, IllegalArgumentException {
+    public String requestService(String filename) throws IOException, IllegalArgumentException {
         //Controllo argomenti
         if (filename.isBlank()) {
             throw new IllegalArgumentException("Filename vuoto");
@@ -107,19 +108,26 @@ public class RSClient {
         try (ByteArrayInputStream byteStream = new ByteArrayInputStream(packet.getData())) {
             try (DataInputStream dataStream = new DataInputStream(byteStream)) {
                 //Ricavo la porta del servizio.
-                int tmpPort = dataStream.readInt();
+                String tmpString = dataStream.readUTF();
+                int tmpPort = -1;
+
+                try {
+                    tmpPort = Integer.parseInt(tmpString);
+                }catch(NumberFormatException e){
+                    return tmpString;
+                }
 
                 //Verifico che la porta sia valida.
                 //Controllo che la porta sia non standard e nel range di 16-bit.
                 //Se il nome file non fosse fra quelli noti al DiscoveryServer, il
-                //DiscoveryServer invia esito negativo (-1 ????) e il client termina.
-                if (!(isPortValid(serverPort))) {
+                //DiscoveryServer invia esito negativo e il client termina.
+                if (!(isPortValid(tmpPort))) {
                     //throw new IllegalArgumentException("Porta servizio non valida");
-                    return false;
+                    return "Porta non valida";
                 }
 
                 this.servicePort = tmpPort;
-                return true;
+                return null;
             }
         }
     }
@@ -148,7 +156,7 @@ public class RSClient {
         if (!networkState) throw new IllegalStateException("Bisogna inizializzare la rete prima");
 
         //Devo verificare che sia già stato trovato il servizio.
-        if (servicePort < 0) throw new IllegalStateException("Bisogna cercare il servizio prima");
+        if (!isPortValid(servicePort)) throw new IllegalStateException("Bisogna cercare il servizio prima");
 
         //Ora posso chidere al servizio di swappare le righe:
 
@@ -211,6 +219,7 @@ public class RSClient {
 //        }
 
         RSClient client = null;
+        String esitoServizio = null;
 
         //Creo l'oggetto client.
         try {
@@ -235,10 +244,15 @@ public class RSClient {
         System.out.println("Rete inizializzata: " + serverIP + ":" + serverPort);
 
         try {
-            client.requestService(filename);
+            esitoServizio = client.requestService(filename);
         } catch (IOException e) {
             System.err.println("Impossibile richiedere il servizio relativo a: " + filename);
             System.exit(3);
+        }
+
+        if(esitoServizio != null){
+            System.err.println(esitoServizio);
+            System.exit(6);
         }
 
         System.out.println("Servizio trovato: " + client.getServicePort());
@@ -265,7 +279,7 @@ public class RSClient {
                 }
 
                 try{
-                    line1 = Integer.parseInt(tmpString);
+                    line1 = Integer.parseInt(tmpString) -1;
                 }catch (NumberFormatException ex){
                     System.out.println("Linea 1 malformata");
                     continue;
@@ -282,7 +296,7 @@ public class RSClient {
                 }
 
                 try{
-                    line2 = Integer.parseInt(tmpString);
+                    line2 = Integer.parseInt(tmpString) -1;
                 }catch (NumberFormatException ex){
                     System.out.println("Linea 2 malformata");
                     continue;//Nuovo ciclo REPL.
