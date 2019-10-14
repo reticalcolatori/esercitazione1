@@ -48,6 +48,7 @@ public class DiscoveryServer {
 			System.exit(INVALID_DS_PORT);
 		}
 		
+		//se la porta del discovery server è out of range errore
 		if(dsPort < 1024 || dsPort > 65536) {
 			System.out.println("Invalid port: must be int 1024 < port < 64k");
 			System.exit(INVALID_DS_PORT);
@@ -56,25 +57,27 @@ public class DiscoveryServer {
 		//Controllo le coppie file:porta.
 		for (int i = 0, j = 1; i < nCoppie; i++, j+=2){
 
-			//Coppia di check
+			//Coppia da controllare
 			String filenameCheck = args[j];
 			String portaCheck = args[j+1];
 
 			if(args[0].equals(portaCheck)){
-				System.err.println("La porta DS già in uso per RowSwapServer");
+				System.err.println("La porta per RowSwapServer è già in uso dal discovery!");
 				System.exit(CHK_DS_PORT);
 			}
 
 			for (int k = i+1, l = j+2; k < nCoppie; k++, l+=2){
-				//Coppia di check secondo
+				//Coppia da controllare (questa è quella che scorre tutte le restanti coppie)
 				String filenameCheckLoop = args[l];
 				String portaCheckLoop = args[l+1];
 
+				//non prendiamo in ingresso file con lo stesso nome
 				if(filenameCheck.equals(filenameCheckLoop)){
 					System.err.println("filename già inserito");
 					System.exit(CHK_FILENAME);
 				}
 
+				//non posso avere porte duplicate --> questo comporta che più RSS sarebbero in ascolto dietro alla stessa porta!
 				if(portaCheck.equals(portaCheckLoop)){
 					System.err.println("porta già inserito");
 					System.exit(CHK_PORT);
@@ -109,6 +112,7 @@ public class DiscoveryServer {
 				int tmp = 0;
 
 				while(bufferedReader.readLine() != null) tmp++;
+				//setto all'interno della struttura il numero di righe per ciascun file
 				fps[i].setFileCount(tmp);
 
 			} catch (IOException e) {
@@ -117,13 +121,8 @@ public class DiscoveryServer {
 			}
 
 		}
-		
-		//controllo immissione dati
-		for (int i = 0; i < fps.length; i++) {
-			System.out.println(fps[i].getFilename() + " " + fps[i].getPort());
-		}
 
-		//creo array di RowSwapServer (thread figli)
+		//creo array di RowSwapServer (thread figli) quanti il numero delle coppie passate
 		RowSwapServer rss[] = new RowSwapServer[nCoppie];
 		
 		for (int i = 0; i < rss.length; i++) {
@@ -132,6 +131,7 @@ public class DiscoveryServer {
 			} catch (SocketException e) {
 				e.printStackTrace(); System.exit(SOCKET_ERR);
 			}
+			//attivo i vari RowSwapServer
 			rss[i].start();
 		} 
 		
@@ -153,12 +153,19 @@ public class DiscoveryServer {
 		ByteArrayOutputStream boStream = null;
 		DataOutputStream doStream = null;
 		
+		/*
+		 *Ciclicamente il DS:
+		 * 1) si pone in attesa della richiesta dei vari Client
+		 * 2) ricava se possibile la porta corrispondente al file 
+		 * 3) prepara e invia la risposta
+		 */
 		while (true) {
 			packet.setPort(dsPort);
-			packet.setData(buf, 0, buf.length); //i dati verranno scritti qui
+			packet.setData(buf, 0, buf.length); //devo risettare ciclicamente il buffer del pacchetto
 
 			try {
-				socket.receive(packet); //mi pongo in attesa di un packet da parte di un client
+				//mi pongo in attesa di un packet da parte di un client 
+				socket.receive(packet); 
 			} catch (IOException e) {
 				e.printStackTrace(); System.exit(RECEIVE_ERR);
 			}
@@ -168,17 +175,11 @@ public class DiscoveryServer {
 			
 			String richiesta = null;
 			try {
-				richiesta = diStream.readUTF(); //leggo nome file inviato dal client
+				//leggo nome file inviato dal client --> risponderò con la corrispettiva porta (se corretto)
+				richiesta = diStream.readUTF(); 
 			} catch (IOException e) {
 				e.printStackTrace(); System.exit(UTF_ERR);
 			}
-
-//			try {
-//				diStream.close();
-//				biStream.close();
-//			} catch (IOException e) {
-//				e.printStackTrace(); System.exit(IO_ERROR);
-//			}
 
 			boStream = new ByteArrayOutputStream();
 			doStream = new DataOutputStream(boStream);
@@ -193,14 +194,9 @@ public class DiscoveryServer {
 			} catch (IOException e) {
 				e.printStackTrace(); System.exit(WRITEINT_ERR);
 			}
-
-			//Ma cosa mi combinate?!?!
-            //Sovrascrivete il pointer del buffer!
-
-//			buf = boStream.toByteArray(); //converto lo stream in un byte di array
-//			packet.setData(buf, 0, buf.length);
-
-            packet.setData(boStream.toByteArray());
+			
+			//setto il contenuto della risposta
+           		packet.setData(boStream.toByteArray());
 
 			try {
 				socket.send(packet); //invio risposta
@@ -215,13 +211,11 @@ public class DiscoveryServer {
 	}
 
 	private static int getPortByFilename(String richiesta) {
-		
 		for (int i = 0; i < fps.length ; i++) {
 			if(fps[i].getFilename().equals(richiesta))
 				return fps[i].getPort();
 		}
 		return -1;
 	}
-	
 	
 }
