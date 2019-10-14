@@ -3,6 +3,7 @@ package com;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 public class FilePortStruct {
@@ -14,6 +15,7 @@ public class FilePortStruct {
 	private Path path;
 	private int port;
 	private int fileCount = -1;
+	private boolean valid = true;
 	
 	public FilePortStruct(String fileName, String port) {
 
@@ -32,6 +34,8 @@ public class FilePortStruct {
 			System.exit(INVALID_PORT);
 		}
 		
+		//this.path = Paths.get(new File(fileName).toURI());
+		//Disponibile da Java 11
 		this.path = Path.of(new File(fileName).toURI());
 	}
 
@@ -53,5 +57,13 @@ public class FilePortStruct {
 
 	public void setFileCount(int fileCount) {
 		this.fileCount = fileCount;
+	}
+
+	public boolean isValid() {
+		return valid;
+	}
+
+	public void setValid(boolean valid) {
+		this.valid = valid;
 	}
 }

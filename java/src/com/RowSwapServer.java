@@ -5,10 +5,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.StringTokenizer;
 
 public class RowSwapServer extends Thread {
@@ -108,10 +105,19 @@ public class RowSwapServer extends Thread {
 
     	final String esitoOK = "OK";
 
+    	//Giustamente il controllo viene fatto a livello client...
+        //In questo caso isolato può anche andare, ma in un contesto più generale
+        //dove il client viene implementato da terze parti, non sappiamo se hanno fatto il controllo.
+        //if(riga1 == riga2) return esitoOK;
+
         //Controllo sulle righe (se superano la dimensione del file su cui insisto non ci provo nemmeno ritorno stringa errore
         if (riga1 > struct.getFileCount() || riga2 > struct.getFileCount()) {
             return "Riga 1 o Riga 2 supera la dimensione del file. (" + struct.getFileCount() + ")";
         }
+
+        //Cerco la riga più in basso:
+        //Nel ciclo mi fermerò lì.
+        int maxLine = riga1 > riga2 ? riga1 : riga2;
 
         //Leggo tutto il file e mi salvo le righe da swappare
         String inDaSwap1 = null;
@@ -124,6 +130,8 @@ public class RowSwapServer extends Thread {
 
                 if (i == riga1) inDaSwap1 = tmpLine;
                 if (i == riga2) inDaSwap2 = tmpLine;
+                if (i == maxLine) break;
+
             }
         } catch (IOException e) {
             String err = "Errore nell'aprire il file: " + e.getMessage();
@@ -133,6 +141,8 @@ public class RowSwapServer extends Thread {
         }
 
         //Buffer temporaneo del file temporaneo.
+        //Path tmpPath = Paths.get(new File(getId() + ".tmp").toURI());
+        //Disponibile da Java 11
 		Path tmpPath = Path.of(new File(getId() + ".tmp").toURI());
 
         try (BufferedWriter bufferedWriter = Files.newBufferedWriter(tmpPath, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)) {
@@ -142,9 +152,9 @@ public class RowSwapServer extends Thread {
                 for (int i = 0; i < struct.getFileCount(); i++) {
                     String tmpLine = bufferedReader.readLine();
 
-                    if (i == riga1) { //se la riga letta � quella di indice riga1 allora ci scrivo la seconda
+                    if (i == riga1) { //se la riga letta è quella di indice riga1 allora ci scrivo la seconda
                         bufferedWriter.write(inDaSwap2);
-                    } else if (i == riga2) { //se la riga letta � quella di indice riga2 allora ci scrivo la prima
+                    } else if (i == riga2) { //se la riga letta è quella di indice riga2 allora ci scrivo la prima
                         bufferedWriter.write(inDaSwap1);
                     } else {
                         bufferedWriter.write(tmpLine);

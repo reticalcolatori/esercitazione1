@@ -270,6 +270,7 @@ public class RSClient {
 
                 if(tmpString == null) //EOF --> devo uscire (termino)
                     System.exit(EOF_OCC);
+
                 try{
                     line1 = Integer.parseInt(tmpString) - 1;
                 }catch (NumberFormatException ex){

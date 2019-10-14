@@ -79,7 +79,7 @@ public class DiscoveryServer {
 
 				//non posso avere porte duplicate --> questo comporta che più RSS sarebbero in ascolto dietro alla stessa porta!
 				if(portaCheck.equals(portaCheckLoop)){
-					System.err.println("porta già inserito");
+					System.err.println("porta già inserita");
 					System.exit(CHK_PORT);
 				}
 			}
@@ -96,29 +96,38 @@ public class DiscoveryServer {
 
 			//Controllo che i file esistano: inoltre colgo l'occasione per contare le righe.
 			//Controllo che il file esite.
-			if(!Files.exists(fps[i].getPath())){
-				System.err.println("Il file non esite.");
-				System.exit(FILE_NOT_EXISTS);
-			}
+			if(fps[i].isValid())
+				if(!Files.exists(fps[i].getPath())){
+					System.err.println("Il file non esite.");
+					//Il prof ha detto che non si butta via nulla.
+					//System.exit(FILE_NOT_EXISTS);
+					fps[i].setValid(false);
+				}
 
 			//Controllo che il file sia accessibile sia in lettura sia in scrittura.
-			if(!Files.isReadable(fps[i].getPath()) || !Files.isWritable(fps[i].getPath())){
-				System.err.println("Il file non è leggibile/scrivibile.");
-				System.exit(FILE_NOT_RDWR);
-			}
+			if(fps[i].isValid())
+				if(!Files.isReadable(fps[i].getPath()) || !Files.isWritable(fps[i].getPath())){
+					System.err.println("Il file "+fps[i].getFilename()+" non è leggibile/scrivibile.");
+					//Il prof ha detto che non si butta via nulla.
+					//System.exit(FILE_NOT_RDWR);
+					fps[i].setValid(false);
+				}
 
 			//Conto le righe.
-			try (BufferedReader bufferedReader = Files.newBufferedReader(fps[i].getPath(), StandardCharsets.UTF_8)){
-				int tmp = 0;
+			if(fps[i].isValid())
+				try (BufferedReader bufferedReader = Files.newBufferedReader(fps[i].getPath(), StandardCharsets.UTF_8)){
+					int tmp = 0;
 
-				while(bufferedReader.readLine() != null) tmp++;
-				//setto all'interno della struttura il numero di righe per ciascun file
-				fps[i].setFileCount(tmp);
+					while(bufferedReader.readLine() != null) tmp++;
+					//setto all'interno della struttura il numero di righe per ciascun file
+					fps[i].setFileCount(tmp);
 
-			} catch (IOException e) {
-				System.err.println("Errore nell'aprire il file: "+e.getMessage());
-				System.exit(IO_ERROR);
-			}
+				} catch (IOException e) {
+					System.err.println("Errore nell'aprire il file: "+e.getMessage());
+					//Il prof ha detto che non si butta via nulla.
+					//System.exit(IO_ERROR);
+					fps[i].setValid(false);
+				}
 
 		}
 
@@ -126,13 +135,16 @@ public class DiscoveryServer {
 		RowSwapServer rss[] = new RowSwapServer[nCoppie];
 		
 		for (int i = 0; i < rss.length; i++) {
-			try {
-				rss[i] = new RowSwapServer(fps[i]);
-			} catch (SocketException e) {
-				e.printStackTrace(); System.exit(SOCKET_ERR);
+			//Avvio RowSwapServer solo se il file è valido.
+			if(fps[i].isValid()){
+				try {
+					rss[i] = new RowSwapServer(fps[i]);
+				} catch (SocketException e) {
+					e.printStackTrace(); System.exit(SOCKET_ERR);
+				}
+				//attivo i vari RowSwapServer
+				rss[i].start();
 			}
-			//attivo i vari RowSwapServer
-			rss[i].start();
 		} 
 		
 		// Creo socket per comunicazione con il client
