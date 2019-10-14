@@ -15,12 +15,18 @@ public class RowSwapServer extends Thread {
 	private static final int RS_WRITE_UTF_ERR = 13;
 	private static final int RS_SEND_ERR = 14;
 
-    private FilePortStruct struct;
+    //private FilePortStruct struct;
     private DatagramSocket socket;
+    private int nLine;
+    private Path filePath;
+    private int RSport;
 
-    public RowSwapServer(FilePortStruct struct) throws SocketException {
-        this.struct = struct;
-        this.socket = new DatagramSocket(struct.getPort());
+    public RowSwapServer(int nLine, Path filePath, int RSport) throws SocketException {
+        //mi occorono, il numero delle righe del file; path porta e nome file
+        this.nLine = nLine;
+        this.filePath = filePath;
+        this.RSport = RSport;
+        this.socket = new DatagramSocket(RSport);
     }
 
     @Override
@@ -111,8 +117,8 @@ public class RowSwapServer extends Thread {
         //if(riga1 == riga2) return esitoOK;
 
         //Controllo sulle righe (se superano la dimensione del file su cui insisto non ci provo nemmeno ritorno stringa errore
-        if (riga1 > struct.getFileCount() || riga2 > struct.getFileCount()) {
-            return "Riga 1 o Riga 2 supera la dimensione del file. (" + struct.getFileCount() + ")";
+        if (riga1 > this.nLine || riga2 > this.nLine) {
+            return "Riga 1 o Riga 2 supera la dimensione del file. (" + this.nLine + ")";
         }
 
         //Cerco la riga più in basso:
@@ -123,7 +129,7 @@ public class RowSwapServer extends Thread {
         String inDaSwap1 = null;
         String inDaSwap2 = null;
 
-        try (BufferedReader bufferedReader = Files.newBufferedReader(struct.getPath())) {
+        try (BufferedReader bufferedReader = Files.newBufferedReader(this.filePath)) {
             //Leggo le righe.
             for (int i = 0; i < struct.getFileCount(); i++) {
                 String tmpLine = bufferedReader.readLine();
@@ -147,7 +153,7 @@ public class RowSwapServer extends Thread {
 
         try (BufferedWriter bufferedWriter = Files.newBufferedWriter(tmpPath, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)) {
 
-            try (BufferedReader bufferedReader = Files.newBufferedReader(struct.getPath(), StandardCharsets.UTF_8)) {
+            try (BufferedReader bufferedReader = Files.newBufferedReader(this.filePath, StandardCharsets.UTF_8)) {
                 //Leggo le righe.
                 for (int i = 0; i < struct.getFileCount(); i++) {
                     String tmpLine = bufferedReader.readLine();
@@ -175,7 +181,7 @@ public class RowSwapServer extends Thread {
 
 		try {
 			//sposto il file tmp in quello finale
-			Files.move(tmpPath, struct.getPath(), StandardCopyOption.REPLACE_EXISTING);
+			Files.move(tmpPath, this.filePath, StandardCopyOption.REPLACE_EXISTING);
 		} catch (IOException e) {
 			String err = "Impossibile spostare il file temporaneo: " + e.getMessage();
 			System.err.println(err);

@@ -23,8 +23,11 @@ public class DiscoveryServer {
 	private static final int CHK_DS_PORT = 11;
 	private static final int CHK_FILENAME = 12;
 	private static final int CHK_PORT = 12;
-	
-	private static FilePortStruct fps[] = null;
+
+    private String fileName[];
+    private int filePort[];
+    private Path filePath[];
+    private int fileLineCount[];
 
 	public static void main(String[] args) {
 		
@@ -38,7 +41,12 @@ public class DiscoveryServer {
 			System.out.println("Usage: DiscoveryServer portaDiscoveryServer nomefile1 port1 ... nomefileN portN");
 			System.exit(INV_ERR);
 		}
-		
+
+		fileName = new String[nCoppie];
+		filePort[] = new int[nCoppie];
+        filePath[] = new Path[nCoppie];
+        fileLineCount[] = new int[nCoppie];
+
 		//controllo porta DiscoveryServer
 		int dsPort = -1;
 
@@ -55,10 +63,7 @@ public class DiscoveryServer {
 			System.exit(INVALID_DS_PORT);
 		}
 
-		String fileName[] = new String[nCoppie];
-		int filePort[] = new int[nCoppie];
-		Path filePath[] = new Path[nCoppie];
-		int fileLineCount[] = new int[nCoppie];
+
 		boolean coppiaOK = true;
 		int x = 0; //Indice posizione libera per array file-porta.
 
@@ -123,7 +128,7 @@ public class DiscoveryServer {
 					System.err.println("Errore nell'aprire il file: "+e.getMessage());
 					//Il prof ha detto che non si butta via nulla.
 					//System.exit(IO_ERROR);
-					fps[i].setValid(false);
+					//fps[i].setValid(false);
 				}
 
 				fileName[x] = filenameCheck;
@@ -134,14 +139,22 @@ public class DiscoveryServer {
 		}
 		//uscito da qua ho gia il nome dei corrispettivi Path, il filename, la porta, e le linee per ciascun file suddivisi nei vari array sicuro allo stesso indice!
 
-		//creo array di RowSwapServer (thread figli) quanti il numero delle coppie passate
-		RowSwapServer rss[] = new RowSwapServer[nCoppie];
-		
-		for (int i = 0; i < rss.length; i++) {
-			//Avvio RowSwapServer solo se il file è valido.
+		//creo array di RowSwapServer (thread figli) quanti il numero delle coppie passate -->
+        //non più verifico se isValid i validi sono sicuramente x già verificato gli altri non li ho messi!
+		RowSwapServer rss[] = new RowSwapServer[x];
+
+
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    TODO:
+
+        MODIFICA IL COSTRUTTORE DEL ROWSWAP e corpo
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+		for (int i = 0; i < x; i++) {
+			//Avvio RowSwapServer solo se il file è valido, non occorre fare più controlli i file validi alla fine del ciclo sono x
 			if(fps[i].isValid()){
 				try {
-					rss[i] = new RowSwapServer(fps[i]);
+					rss[i] = new RowSwapServer(fileLineCount[i], filePath[i], filePort[i]);
 				} catch (SocketException e) {
 					e.printStackTrace(); System.exit(SOCKET_ERR);
 				}
@@ -211,7 +224,7 @@ public class DiscoveryServer {
 			}
 			
 			//setto il contenuto della risposta
-           		packet.setData(boStream.toByteArray());
+            packet.setData(boStream.toByteArray());
 
 			try {
 				socket.send(packet); //invio risposta
@@ -225,10 +238,12 @@ public class DiscoveryServer {
 		// socket.close();
 	}
 
+	//se quel che mi chiedi è uguale a qualcosa che ho salvato nella struttura dei nomi del file nel corrispettivo
+    //fileport allo stesso indice trovo la tua porta, altrimenti -1
 	private static int getPortByFilename(String richiesta) {
-		for (int i = 0; i < fps.length ; i++) {
-			if(fps[i].getFilename().equals(richiesta))
-				return fps[i].getPort();
+		for (int i = 0; i < fileName.length; i++) {
+			if(fileName[i].equals(richiesta))
+				return filePort[i];
 		}
 		return -1;
 	}
