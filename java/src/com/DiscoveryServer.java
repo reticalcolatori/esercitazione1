@@ -57,6 +57,8 @@ public class DiscoveryServer {
 
 		String fileName[] = new String[nCoppie];
 		int filePort[] = new int[nCoppie];
+		Path filePath[] = new Path[nCoppie];
+		int fileLineCount[] = new int[nCoppie];
 		boolean coppiaOK = true;
 		int x = 0; //Indice posizione libera per array file-porta.
 
@@ -91,75 +93,31 @@ public class DiscoveryServer {
 					//System.exit(CHK_PORT);
 				}
 			}
+			//quando arrivo qua ho sicuramente un nomefile e porta non duplicati
+			//ora verifico anche che il path esista e sia leggibile/scrivibile solo a quel punto li aggiungo anche nelle apposito 3 strutture
+			Path currPath = Path.of(new File(filenameCheck).toURI());
 
-			if (coppiaOK) {
-				fileName[x] = filenameCheck;
-				filePort[x] = Integer.parseInt(portaCheck);
-				x++;
-			}
-		}
-
-		Path filePath[] = new Path[x];
-		Path currPath = null;
-		int indicePath = 0;
-
-		for (int i = 0; i <= x; i++) {
-			currPath = Path.of(new File(fileName[i]).toURI());
-
+			//verifico che il path associato al file in esame esista
 			if (!Files.exists(currPath)) {
 				System.err.println("Il file " + i + " non esiste.");
-				currPath = null;
+				coppiaOK = false;
 			}
 
+			//verifico di avere di diritti di lettura e scrittura
 			if (!Files.isReadable(currPath) || !Files.isWritable(currPath)) {
 				System.err.println("Il file " + i + " non è leggibile o scrivibile.");
-				currPath = null;
+				coppiaOK = false;
 			}
 
-			if (currPath != null) {
-				filePath[indicePath] = currPath;
-				indicePath++;
-			}
-		}
-		
-		//predispongo struttura per coppie file/port
+			//a questo punto se la coppia è ok conto le righe per il file
+			if (coppiaOK) {
 
-		/*
-		fps = new FilePortStruct[nCoppie];
-		int argsIdx = 1;
-				
-		for (int i = 0; i < nCoppie; i++) {
-
-			fps[i] = new FilePortStruct(args[argsIdx], args[argsIdx + 1]);
-			argsIdx += 2;
-
-			//Controllo che i file esistano: inoltre colgo l'occasione per contare le righe.
-			//Controllo che il file esite.
-			if(fps[i].isValid())
-				if(!Files.exists(fps[i].getPath())){
-					System.err.println("Il file non esite.");
-					//Il prof ha detto che non si butta via nulla.
-					//System.exit(FILE_NOT_EXISTS);
-					fps[i].setValid(false);
-				}
-
-			//Controllo che il file sia accessibile sia in lettura sia in scrittura.
-			if(fps[i].isValid())
-				if(!Files.isReadable(fps[i].getPath()) || !Files.isWritable(fps[i].getPath())){
-					System.err.println("Il file "+fps[i].getFilename()+" non è leggibile/scrivibile.");
-					//Il prof ha detto che non si butta via nulla.
-					//System.exit(FILE_NOT_RDWR);
-					fps[i].setValid(false);
-				}
-
-			//Conto le righe.
-			if(fps[i].isValid())
-				try (BufferedReader bufferedReader = Files.newBufferedReader(fps[i].getPath(), StandardCharsets.UTF_8)){
+				try (BufferedReader bufferedReader = Files.newBufferedReader(currPath, StandardCharsets.UTF_8)){
 					int tmp = 0;
 
 					while(bufferedReader.readLine() != null) tmp++;
 					//setto all'interno della struttura il numero di righe per ciascun file
-					fps[i].setFileCount(tmp);
+					fileLineCount[x] = tmp;
 
 				} catch (IOException e) {
 					System.err.println("Errore nell'aprire il file: "+e.getMessage());
@@ -168,8 +126,13 @@ public class DiscoveryServer {
 					fps[i].setValid(false);
 				}
 
+				fileName[x] = filenameCheck;
+				filePort[x] = Integer.parseInt(portaCheck);
+				filePath[x] = currPath;
+				x++;
+			}
 		}
-		*/
+		//uscito da qua ho gia il nome dei corrispettivi Path, il filename, la porta, e le linee per ciascun file suddivisi nei vari array sicuro allo stesso indice!
 
 		//creo array di RowSwapServer (thread figli) quanti il numero delle coppie passate
 		RowSwapServer rss[] = new RowSwapServer[nCoppie];
