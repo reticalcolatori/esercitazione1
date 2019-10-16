@@ -7,63 +7,63 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 public class FilePortStruct {
-	
-	private static final int INVALID_PORT = 11;
+
+    private static final int INVALID_PORT = 11;
 
 
-	private String fileName;
-	private Path path;
-	private int port;
-	private int fileCount = -1;
-	private boolean valid = true;
-	
-	public FilePortStruct(String fileName, String port) {
+    private String fileName;
+    private Path path;
+    private int port;
+    private int fileCount = -1;
+    private boolean valid = true;
 
-		this.fileName = fileName;
+    public FilePortStruct(String fileName, String port) {
 
-		try {
-			this.port = Integer.parseInt(port);
-		} catch (NumberFormatException e) {
-			System.out.println("Invalid port: must be int 1024 < port < 64k");
-			System.exit(INVALID_PORT);
-		}
-		
-		// DEVO CONTROLLARE OGNI VOLTA CHE LA PORTA NON SIA GIA' UTILIZZATA!!!!!!
-		if(this.port < 1024 || this.port > 65536) {
-			System.out.println("Invalid port: must be int 1024 < port < 64k");
-			System.exit(INVALID_PORT);
-		}
-		
-		//this.path = Paths.get(new File(fileName).toURI());
-		//Disponibile da Java 11
-		this.path = Path.of(new File(fileName).toURI());
-	}
+        this.fileName = fileName;
 
-	public String getFilename() {
-		return this.fileName;
-	}
+        try {
+            this.port = Integer.parseInt(port);
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid port: must be int 1024 < port < 64k");
+            System.exit(INVALID_PORT);
+        }
 
-	public Path getPath(){
-		return this.path;
-	}
+        // DEVO CONTROLLARE OGNI VOLTA CHE LA PORTA NON SIA GIA' UTILIZZATA!!!!!!
+        if (this.port < 1024 || this.port > 65536) {
+            System.out.println("Invalid port: must be int 1024 < port < 64k");
+            System.exit(INVALID_PORT);
+        }
 
-	public int getPort() {
-		return this.port;
-	}
+        //this.path = Paths.get(new File(fileName).toURI());
+        //Disponibile da Java 11
+        this.path = Path.of(new File(fileName).toURI());
+    }
 
-	public int getFileCount() {
-		return fileCount;
-	}
+    public String getFilename() {
+        return this.fileName;
+    }
 
-	public void setFileCount(int fileCount) {
-		this.fileCount = fileCount;
-	}
+    public Path getPath() {
+        return this.path;
+    }
 
-	public boolean isValid() {
-		return valid;
-	}
+    public int getPort() {
+        return this.port;
+    }
 
-	public void setValid(boolean valid) {
-		this.valid = valid;
-	}
+    public int getFileCount() {
+        return fileCount;
+    }
+
+    public void setFileCount(int fileCount) {
+        this.fileCount = fileCount;
+    }
+
+    public boolean isValid() {
+        return valid;
+    }
+
+    public void setValid(boolean valid) {
+        this.valid = valid;
+    }
 }

@@ -8,7 +8,7 @@ public class RSClient {
     private static final String DEFAULT_serverIP = "127.0.0.1";
     private static final int DEFAULT_serverPort = 6666;
     private static final int DEFAULT_bufferSize = 256;
-    
+
     private static final int PARAM_ERR = 1;
     private static final int HOST_ERR = 2;
     private static final int NETW_ERR = 3;
@@ -118,7 +118,7 @@ public class RSClient {
 
                 try {
                     tmpPort = Integer.parseInt(tmpString);
-                }catch(NumberFormatException e){
+                } catch (NumberFormatException e) {
                     return tmpString;
                 }
 
@@ -126,8 +126,8 @@ public class RSClient {
                 //Controllo che la porta sia non standard e nel range di 16-bit.
                 //Se il nome file non fosse fra quelli noti al DiscoveryServer, il
                 //DiscoveryServer invia esito negativo e il client termina.
-                if (!(isPortValid(tmpPort)))
-                    return "Porta non valida";
+//                if (!(isPortValid(tmpPort)))
+//                    return "Porta non valida";
 
                 this.servicePort = tmpPort;
                 return null;
@@ -202,12 +202,12 @@ public class RSClient {
         String serverIP = args[0];
         int serverPort = -1;
         try {
-        	serverPort = Integer.parseInt(args[1]);
-        } catch(NumberFormatException e) {
-        	e.printStackTrace();
-        	System.exit(PARAM_ERR);
+            serverPort = Integer.parseInt(args[1]);
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            System.exit(PARAM_ERR);
         }
-        
+
         String filename = args[2];
 
         //Controllo delgli arogmenti
@@ -246,7 +246,7 @@ public class RSClient {
         }
 
         //se va tutto bene torno null quindi se non sono null errore
-        if(esitoServizio != null){
+        if (esitoServizio != null) {
             System.err.println(esitoServizio);
             System.exit(SERVICE_ERR);
         }
@@ -268,12 +268,12 @@ public class RSClient {
                 System.out.println("Linea 1: ");
                 tmpString = stdIn.readLine();
 
-                if(tmpString == null) //EOF --> devo uscire (termino)
+                if (tmpString == null) //EOF --> devo uscire (termino)
                     System.exit(EOF_OCC);
 
-                try{
+                try {
                     line1 = Integer.parseInt(tmpString) - 1;
-                }catch (NumberFormatException ex){
+                } catch (NumberFormatException ex) {
                     System.out.println("Linea 1 malformata");
                     continue;
                 }
@@ -282,18 +282,18 @@ public class RSClient {
                 System.out.println("Linea 2: ");
                 tmpString = stdIn.readLine();
 
-                if(tmpString == null) //se EOF termino
-                	System.exit(EOF_OCC);
+                if (tmpString == null) //se EOF termino
+                    System.exit(EOF_OCC);
 
-                try{
+                try {
                     line2 = Integer.parseInt(tmpString) - 1;
-                }catch (NumberFormatException ex){
+                } catch (NumberFormatException ex) {
                     System.out.println("Linea 2 malformata");
                     continue;//Nuovo ciclo REPL.
                 }
 
                 //Controllo delle linee.
-                if(line1 < 0 | line2 < 0){
+                if (line1 < 0 | line2 < 0) {
                     System.out.println("Linee non valide (<0)");
                     continue;//Nuovo ciclo REPL.
                 }

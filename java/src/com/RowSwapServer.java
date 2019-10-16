@@ -6,14 +6,15 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 
 public class RowSwapServer extends Thread {
 
     private static final int RS_RECEIVE_ERR = 11;
     private static final int RS_READ_UTF_ERR = 12;
-	private static final int RS_WRITE_UTF_ERR = 13;
-	private static final int RS_SEND_ERR = 14;
+    private static final int RS_WRITE_UTF_ERR = 13;
+    private static final int RS_SEND_ERR = 14;
 
     private FilePortStruct struct;
     private DatagramSocket socket;
@@ -33,23 +34,25 @@ public class RowSwapServer extends Thread {
         //preparo strutture per lettura/scrittura dati
         ByteArrayInputStream biStream = null;
         DataInputStream diStream = null;
-		ByteArrayOutputStream boStream = null;
-		DataOutputStream doStream = null;
+        ByteArrayOutputStream boStream = null;
+        DataOutputStream doStream = null;
         String richiesta = null;
         int riga1 = -1;
         int riga2 = -1;
         StringTokenizer st = null;
+        String esito = null;
 
         while (true) {
-        	//ciclicamente risetto il buffer del pacchetto
+            //ciclicamente risetto il buffer del pacchetto
             packet.setData(buf, 0, buf.length);
 
             try {
                 socket.receive(packet); //attendo una richiesta da un client
             } catch (IOException e) {
-            	//non dovrebbe entrare se non impostato timeout.
+                //non dovrebbe entrare se non impostato timeout.
                 e.printStackTrace();
-                System.exit(RS_RECEIVE_ERR);
+//                System.exit(RS_RECEIVE_ERR);
+                esito = "Impossibile ricevere messaggio";
             }
 
             biStream = new ByteArrayInputStream(packet.getData(), 0, packet.getLength());
@@ -59,53 +62,64 @@ public class RowSwapServer extends Thread {
                 richiesta = diStream.readUTF(); //leggo le due righe separate da virgola
             } catch (IOException e) {
                 e.printStackTrace();
-                System.exit(RS_READ_UTF_ERR);
+//                System.exit(RS_READ_UTF_ERR);
+                esito = "richiesta malformata";
             }
 
-            st = new StringTokenizer(richiesta, ","); //splitto per trovare le due righe da scambiare
-            riga1 = Integer.parseInt(st.nextToken());
-            riga2 = Integer.parseInt(st.nextToken());
 
-            //Scambio le righe e ritorno l'esito.
-            String esito = swap(riga1, riga2);
+            //Continuo solo la decodifica è andata a buon fine.
+            if (esito == null) {
+                st = new StringTokenizer(richiesta, ","); //splitto per trovare le due righe da scambiare
+
+                try {
+                    riga1 = Integer.parseInt(st.nextToken());
+                    riga2 = Integer.parseInt(st.nextToken());
+
+                    //Scambio le righe e ritorno l'esito.
+                    esito = swap(riga1, riga2);
+
+                } catch (NumberFormatException | NoSuchElementException e) {
+                    esito = "righe malformate";
+                }
+            }
 
             boStream = new ByteArrayOutputStream();
             doStream = new DataOutputStream(boStream);
 
-			try {
-				//rispondo con esito dell'operazione di swap
-				doStream.writeUTF(esito);
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.exit(RS_WRITE_UTF_ERR);
-			}
+            try {
+                //rispondo con esito dell'operazione di swap
+                doStream.writeUTF(esito);
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.exit(RS_WRITE_UTF_ERR);
+            }
 
-			packet.setData(boStream.toByteArray());
+            packet.setData(boStream.toByteArray());
 
-			try {
-				doStream.close();
-				boStream.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-				//non importa uscire ho già la risposta.
-			}
+            try {
+                doStream.close();
+                boStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+                //non importa uscire ho già la risposta.
+            }
 
-			try {
-				//invio la risposta con esito dello swap
-				socket.send(packet);
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.exit(RS_SEND_ERR);
-			}
+            try {
+                //invio la risposta con esito dello swap
+                socket.send(packet);
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.exit(RS_SEND_ERR);
+            }
 
-		}
+        }
     }
 
     private String swap(int riga1, int riga2) {
 
-    	final String esitoOK = "OK";
+        final String esitoOK = "OK";
 
-    	//Giustamente il controllo viene fatto a livello client...
+        //Giustamente il controllo viene fatto a livello client...
         //In questo caso isolato può anche andare, ma in un contesto più generale
         //dove il client viene implementato da terze parti, non sappiamo se hanno fatto il controllo.
         //if(riga1 == riga2) return esitoOK;
@@ -143,7 +157,7 @@ public class RowSwapServer extends Thread {
         //Buffer temporaneo del file temporaneo.
         //Path tmpPath = Paths.get(new File(getId() + ".tmp").toURI());
         //Disponibile da Java 11
-		Path tmpPath = Path.of(new File(getId() + ".tmp").toURI());
+        Path tmpPath = Path.of(new File(getId() + ".tmp").toURI());
 
         try (BufferedWriter bufferedWriter = Files.newBufferedWriter(tmpPath, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)) {
 
@@ -173,16 +187,16 @@ public class RowSwapServer extends Thread {
             return err;
         }
 
-		try {
-			//sposto il file tmp in quello finale
-			Files.move(tmpPath, struct.getPath(), StandardCopyOption.REPLACE_EXISTING);
-		} catch (IOException e) {
-			String err = "Impossibile spostare il file temporaneo: " + e.getMessage();
-			System.err.println(err);
-			return err;
-		}
-		//ritorno esito in formato di stringa dello swap
-		return esitoOK;
+        try {
+            //sposto il file tmp in quello finale
+            Files.move(tmpPath, struct.getPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            String err = "Impossibile spostare il file temporaneo: " + e.getMessage();
+            System.err.println(err);
+            return err;
+        }
+        //ritorno esito in formato di stringa dello swap
+        return esitoOK;
     }
 
 }
