@@ -56,7 +56,9 @@ public class DiscoveryServer {
 
 
 		boolean coppiaOK = true;
-		int x = 0; //Indice posizione libera per array file-porta.
+
+		//Performance caricamento
+		long startTime = System.nanoTime();
 
 		//Controllo le coppie file:porta.
 		for (int i = 0, j = 1; i < nCoppie; i++, j+=2){
@@ -133,6 +135,12 @@ public class DiscoveryServer {
 
 			}
 		}
+
+		//Performance bench
+		long stopTime = System.nanoTime();
+		double diffMillis = ((stopTime-startTime)/1000000.0);
+		
+		System.out.println("Tempo caricamento: " + diffMillis + " ms");
 		
 		// Creo socket per comunicazione con il client
 		DatagramSocket socket = null;
