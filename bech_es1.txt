@@ -1,0 +1,26 @@
+Fede-Matti Branch: SENZA STRUTTURE
+Tempo caricamento: 28.811007 ms
+
+Linee Vicine
+1)Tempo swap: 19.121047 ms
+2)Tempo swap: 12.404888 ms
+3)Tempo swap: 2.861214 ms
+
+Linee Lontane
+1)Tempo swap: 2.502823 ms
+2)Tempo swap: 3.729304 ms
+3)Tempo swap: 3.359879 ms
+
+Master Branch: CON STRUTTURE
+Tempo caricamento: 23.488319 ms
+
+
+NOTE:
+I file sono 5 e sono di circa 50kb.
+Il tempo di caricamento è simile, quello senza strutture è leggermente
+più lento perché deve effettuare conversioni di interi etc ogni volta.
+
+Il tempi di swap su righe vicine (1-10) e lontane (1-340) sembrano simili:
+Ciò è dovuto:
+1) I file contengono poche righe e quindi l'operazione di ricerca è trascurabile.
+2)  L'operazione che occupa più tempo è la move, uguale in entrambi i casi.
