@@ -40,9 +40,11 @@ public class RowSwapServer extends Thread {
         int riga1 = -1;
         int riga2 = -1;
         StringTokenizer st = null;
-        String esito = null;
+
 
         while (true) {
+            String esito = null;
+
             //ciclicamente risetto il buffer del pacchetto
             packet.setData(buf, 0, buf.length);
 
@@ -76,7 +78,16 @@ public class RowSwapServer extends Thread {
                     riga2 = Integer.parseInt(st.nextToken());
 
                     //Scambio le righe e ritorno l'esito.
+
+                    //bench
+                    long startTime = System.nanoTime();
+
                     esito = swap(riga1, riga2);
+
+                    //Bench
+                    long stopTime = System.nanoTime();
+                    double diff = (stopTime-startTime)/1000000.0;
+                    System.out.println("Tempo swap: "+ diff + " ms");
 
                 } catch (NumberFormatException | NoSuchElementException e) {
                     esito = "righe malformate";
