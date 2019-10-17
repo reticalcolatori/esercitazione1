@@ -54,6 +54,8 @@ public class DiscoveryServer {
             System.exit(INVALID_DS_PORT);
         }
 
+        long startTime = System.nanoTime();
+
         //Controllo le coppie file:porta.
         for (int i = 0, j = 1; i < nCoppie; i++, j += 2) {
 
@@ -147,6 +149,12 @@ public class DiscoveryServer {
                 rss[i].start();
             }
         }
+
+        //Performance bench
+        long stopTime = System.nanoTime();
+        double diffMillis = ((stopTime-startTime)/1000000.0);
+
+        System.out.println("Tempo caricamento: " + diffMillis + " ms");
 
         // Creo socket per comunicazione con il client
         DatagramSocket socket = null;
