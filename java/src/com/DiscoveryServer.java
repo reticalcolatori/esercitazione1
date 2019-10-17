@@ -24,10 +24,6 @@ public class DiscoveryServer {
 	private static final int CHK_FILENAME = 12;
 	private static final int CHK_PORT = 12;
 
-    private String fileName[];
-    private int filePort[];
-    private Path filePath[];
-    private int fileLineCount[];
 
 	public static void main(String[] args) {
 		
@@ -41,11 +37,6 @@ public class DiscoveryServer {
 			System.out.println("Usage: DiscoveryServer portaDiscoveryServer nomefile1 port1 ... nomefileN portN");
 			System.exit(INV_ERR);
 		}
-
-		fileName = new String[nCoppie];
-		filePort[] = new int[nCoppie];
-        filePath[] = new Path[nCoppie];
-        fileLineCount[] = new int[nCoppie];
 
 		//controllo porta DiscoveryServer
 		int dsPort = -1;
@@ -116,52 +107,32 @@ public class DiscoveryServer {
 
 			//a questo punto se la coppia è ok conto le righe per il file
 			if (coppiaOK) {
+                int tmp = 0;
 
 				try (BufferedReader bufferedReader = Files.newBufferedReader(currPath, StandardCharsets.UTF_8)){
-					int tmp = 0;
-
 					while(bufferedReader.readLine() != null) tmp++;
-					//setto all'interno della struttura il numero di righe per ciascun file
-					fileLineCount[x] = tmp;
-
 				} catch (IOException e) {
 					System.err.println("Errore nell'aprire il file: "+e.getMessage());
-					//Il prof ha detto che non si butta via nulla.
-					//System.exit(IO_ERROR);
-					//fps[i].setValid(false);
+                    continue;
 				}
 
-				fileName[x] = filenameCheck;
-				filePort[x] = Integer.parseInt(portaCheck);
-				filePath[x] = currPath;
-				x++;
+				//Creo thread figlio swapper
+				RowSwapServer server = null;
+
+                try {
+                    server = new RowSwapServer(tmp, currPath, Integer.parseInt(portaCheck));
+                }catch (NumberFormatException e){
+                    System.err.println("Errore parsing: "+portaCheck);
+                    continue;
+                }
+                catch (SocketException e) {
+                    e.printStackTrace(); System.exit(SOCKET_ERR);
+                }
+                //attivo i vari RowSwapServer
+                server.start();
+
 			}
 		}
-		//uscito da qua ho gia il nome dei corrispettivi Path, il filename, la porta, e le linee per ciascun file suddivisi nei vari array sicuro allo stesso indice!
-
-		//creo array di RowSwapServer (thread figli) quanti il numero delle coppie passate -->
-        //non più verifico se isValid i validi sono sicuramente x già verificato gli altri non li ho messi!
-		RowSwapServer rss[] = new RowSwapServer[x];
-
-
-/*----------------------------------------------------------------------------------------------------------------------------------------------------------------
-    TODO:
-
-        MODIFICA IL COSTRUTTORE DEL ROWSWAP e corpo
-
-----------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-		for (int i = 0; i < x; i++) {
-			//Avvio RowSwapServer solo se il file è valido, non occorre fare più controlli i file validi alla fine del ciclo sono x
-			if(fps[i].isValid()){
-				try {
-					rss[i] = new RowSwapServer(fileLineCount[i], filePath[i], filePort[i]);
-				} catch (SocketException e) {
-					e.printStackTrace(); System.exit(SOCKET_ERR);
-				}
-				//attivo i vari RowSwapServer
-				rss[i].start();
-			}
-		} 
 		
 		// Creo socket per comunicazione con il client
 		DatagramSocket socket = null;
@@ -188,7 +159,6 @@ public class DiscoveryServer {
 		 * 3) prepara e invia la risposta
 		 */
 		while (true) {
-			packet.setPort(dsPort);
 			packet.setData(buf, 0, buf.length); //devo risettare ciclicamente il buffer del pacchetto
 
 			try {
@@ -213,7 +183,7 @@ public class DiscoveryServer {
 			doStream = new DataOutputStream(boStream);
 			
 			try {
-				int porta = getPortByFilename(richiesta); //trovo porta corrisp. se esiste
+				int porta = getPortByFilename(richiesta, args); //trovo porta corrisp. se esiste
 				if (porta == -1) { //se il file non esiste lo comunico
 					doStream.writeUTF("Il file richiesto non esiste, quindi non c'è una porta corrispondente\n");
 				} else { //altrimenti restituisco la porta corrisp.
@@ -240,10 +210,10 @@ public class DiscoveryServer {
 
 	//se quel che mi chiedi è uguale a qualcosa che ho salvato nella struttura dei nomi del file nel corrispettivo
     //fileport allo stesso indice trovo la tua porta, altrimenti -1
-	private static int getPortByFilename(String richiesta) {
-		for (int i = 0; i < fileName.length; i++) {
-			if(fileName[i].equals(richiesta))
-				return filePort[i];
+	private static int getPortByFilename(String richiesta, String[] args) {
+		for (int i = 0; i < args.length; i++) {
+			if(args[i].equals(richiesta))
+				return Integer.parseInt(args[i+1]);
 		}
 		return -1;
 	}

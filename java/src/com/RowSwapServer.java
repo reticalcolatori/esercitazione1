@@ -131,7 +131,7 @@ public class RowSwapServer extends Thread {
 
         try (BufferedReader bufferedReader = Files.newBufferedReader(this.filePath)) {
             //Leggo le righe.
-            for (int i = 0; i < struct.getFileCount(); i++) {
+            for (int i = 0; i < nLine; i++) {
                 String tmpLine = bufferedReader.readLine();
 
                 if (i == riga1) inDaSwap1 = tmpLine;
@@ -155,7 +155,7 @@ public class RowSwapServer extends Thread {
 
             try (BufferedReader bufferedReader = Files.newBufferedReader(this.filePath, StandardCharsets.UTF_8)) {
                 //Leggo le righe.
-                for (int i = 0; i < struct.getFileCount(); i++) {
+                for (int i = 0; i < nLine; i++) {
                     String tmpLine = bufferedReader.readLine();
 
                     if (i == riga1) { //se la riga letta è quella di indice riga1 allora ci scrivo la seconda
